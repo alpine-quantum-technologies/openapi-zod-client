@@ -1,4 +1,4 @@
-import { isSchemaObject, type ReferenceObject, type SchemaObject } from "openapi3-ts";
+import { isSchemaObject, type ReferenceObject, type SchemaObject } from "openapi3-ts/oas31";
 import { match } from "ts-pattern";
 
 import type { CodeMetaData, ConversionTypeContext } from "./CodeMeta";
@@ -167,6 +167,11 @@ export function getZodSchema({ schema: $schema, ctx, meta: inheritedMeta, option
 
     const schemaType = schema.type ? (schema.type.toLowerCase() as NonNullable<typeof schema.type>) : undefined;
     if (schemaType && isPrimitiveType(schemaType)) {
+        if (schema.const) {
+            if (schemaType === "string") {
+                return code.assign(`z.literal("${schema.const}")`);
+            }
+        }
         if (schema.enum) {
             if (schemaType === "string") {
                 if (schema.enum.length === 1) {
