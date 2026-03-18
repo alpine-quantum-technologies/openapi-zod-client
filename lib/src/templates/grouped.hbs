@@ -36,6 +36,9 @@ const {{@key}}Endpoints = makeApi([
 		{{#if requestFormat}}
 		requestFormat: "{{requestFormat}}",
 		{{/if}}
+		{{#if sse}}
+		sse: {{sse}},
+		{{/if}}
 		{{#if parameters}}
 		parameters: [
 			{{#each parameters}}

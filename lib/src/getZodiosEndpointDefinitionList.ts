@@ -52,7 +52,12 @@ export const getZodiosEndpointDefinitionList = (doc: OpenAPIObject, options?: Te
 
     const isMediaTypeAllowed = match(options?.isMediaTypeAllowed)
         .with(P.string, (option) => (mediaType: string) => sync(option, { mediaType }, { functions: true }))
-        .with(P.nullish, () => (mediaType: string) => mediaType === "application/json")
+        .with(P.nullish, () => (mediaType: string) => mediaType === "application/json" || "text/event-stream")
+        .otherwise((fn) => fn);
+    
+    const isMediaTypeSSE = match(options?.isMediaTypSSE)
+        .with(P.string, (option) => (mediaType: string) => sync(option, { mediaType }, { functions: true }))
+        .with(P.nullish, () => (mediaType: string) => mediaType === "text/event-stream")
         .otherwise((fn) => fn);
 
     const getOperationAlias = match(options?.withAlias)
@@ -156,7 +161,6 @@ export const getZodiosEndpointDefinitionList = (doc: OpenAPIObject, options?: Te
             const operation = pathItem[method as keyof typeof pathItem] as OperationObject | undefined;
             if (!operation) continue;
             if (options?.withDeprecatedEndpoints ? false : operation.deprecated) continue;
-
             const parameters = Object.entries({
                 ...parametersMap,
                 ...getParametersMap(operation.parameters ?? []),
@@ -188,6 +192,7 @@ export const getZodiosEndpointDefinitionList = (doc: OpenAPIObject, options?: Te
                         .with("application/octet-stream", () => "binary" as const)
                         .with("application/x-www-form-urlencoded", () => "form-url" as const)
                         .with("multipart/form-data", () => "form-data" as const)
+                        .with("text/event-stream", () => "json" as const)
                         .with(P.string.includes("json"), () => "json" as const)
                         .otherwise(() => "text" as const);
 
@@ -223,6 +228,7 @@ export const getZodiosEndpointDefinitionList = (doc: OpenAPIObject, options?: Te
                     if (paramItem.content) {
                         const mediaTypes = Object.keys(paramItem.content ?? {});
                         const matchingMediaType = mediaTypes.find(isAllowedParamMediaTypes);
+                        
 
                         if (!matchingMediaType) {
                             throw new Error(
@@ -289,7 +295,6 @@ export const getZodiosEndpointDefinitionList = (doc: OpenAPIObject, options?: Te
             if (options?.withAllResponses) {
                 endpointDefinition.responses = [];
             }
-
             for (const statusCode in operation.responses) {
                 const responseItem = (
                     isReferenceObject(operation.responses[statusCode])
@@ -298,9 +303,17 @@ export const getZodiosEndpointDefinitionList = (doc: OpenAPIObject, options?: Te
                 ) as ResponseObject;
 
                 const mediaTypes = Object.keys(responseItem.content ?? {});
+                
                 const matchingMediaType = mediaTypes.find(isMediaTypeAllowed);
-
-                const maybeSchema = matchingMediaType ? responseItem.content?.[matchingMediaType]?.schema : null;
+                const matchingMediaTypeSSE = mediaTypes.find(isMediaTypeSSE);
+                
+                let maybeSchema;
+                if(matchingMediaTypeSSE == "text/event-stream"){
+                    endpointDefinition.sse = true;
+                    maybeSchema = matchingMediaType ? responseItem.content?.[matchingMediaType]?.itemSchema : null;
+                }else{
+                    maybeSchema = matchingMediaType ? responseItem.content?.[matchingMediaType]?.schema : null;
+                }
 
                 let schemaString = matchingMediaType ? undefined : voidSchema;
                 let schema: CodeMeta | undefined;
@@ -316,6 +329,7 @@ export const getZodiosEndpointDefinitionList = (doc: OpenAPIObject, options?: Te
                             meta: schema.meta,
                         });
                 }
+                
 
                 if (endpointDefinition.responses !== undefined) {
                     endpointDefinition.responses.push({
@@ -450,6 +464,7 @@ export type EndpointDefinitionWithRefs = Omit<
     "response" | "parameters" | "errors" | "description"
 > & {
     response: string;
+    sse?: boolean;
     description?: string | undefined;
     parameters: Array<
         Omit<Required<ZodiosEndpointDefinition<any>>["parameters"][number], "schema"> & { schema: string }

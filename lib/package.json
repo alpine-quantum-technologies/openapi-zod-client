@@ -6,8 +6,8 @@
         "url": "https://github.com/astahmer/openapi-zod-client.git"
     },
     "author": "Alexandre Stahmer <alexandre.stahmer@gmail.com>",
-    "main": "dist/openapi-zod-client.cjs.js",
-    "module": "dist/openapi-zod-client.esm.js",
+    "main": "dist/aqt-openapi-zod-client.cjs.js",
+    "module": "dist/aqt-openapi-zod-client.esm.js",
     "homepage": "https://github.com/astahmer/openapi-zod-client",
     "bin": {
         "openapi-zod-client": "./bin.js"

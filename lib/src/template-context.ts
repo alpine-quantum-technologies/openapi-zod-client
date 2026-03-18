@@ -304,9 +304,15 @@ export type TemplateContextOptions = {
      * @see https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#response-object
      * @see https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md#media-types
      *
-     * @default `mediaType === "application/json"`
+     * @default `mediaType === "application/json" && mediaType === "text/event-stream"` 
      */
-    isMediaTypeAllowed?: string | ((mediaType: string) => boolean);
+    isMediaTypeAllowed?: string | ((mediaType: string) => boolean); 
+    /**
+     * defines if mediatype is a sse type
+     *
+     * @default `mediaType === "text/event-stream"`
+     */
+    isMediaTypSSE?: string | ((mediaType: string) => boolean); 
     /** if OperationObject["description"] is not defined but the main ResponseObject["description"] is defined, use the latter as ZodiosEndpointDefinition["description"] */
     useMainResponseDescriptionAsEndpointDefinitionFallback?: boolean;
     /**
